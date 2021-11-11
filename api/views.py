@@ -6,75 +6,68 @@ from .serializers import StudentSerializers
 from rest_framework.renderers import JSONRenderer
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
 
-# Create your views here.
-@csrf_exempt
-def student_api(request):
-    if request.method == 'GET':
+
+@method_decorator(csrf_exempt, name="dispatch")
+class StudentAPI(View):
+    def get(self, request, *args, **kwargs):
         json_data = request.body
         stream = io.BytesIO(json_data)
         python_data = JSONParser().parse(stream)
-        id = python_data.get('id',None)
+        id = python_data.get('id', None)
         if id is not None:
             stu = Student.objects.get(id=id)
             serializer = StudentSerializers(stu)
             json_data = JSONRenderer().render(serializer.data)
-            return HttpResponse(json_data,content_type="application/json")
-        
+            return HttpResponse(json_data, content_type="application/json")
+
         stu = Student.objects.all()
         serializer = StudentSerializers(stu, many=True)
         json_data = JSONRenderer().render(serializer.data)
-        return HttpResponse(json_data,content_type="application/json")
+        return HttpResponse(json_data, content_type="application/json")
 
-
-
-    if request.method == 'POST':
+    def post(self, request, *args, **kwargs):
         json_data = request.body
         stream = io.BytesIO(json_data)
         python_data = JSONParser().parse(stream)
         #! when we want to insert then we must give data = var name
-        serializer = StudentSerializers(data = python_data)
+        serializer = StudentSerializers(data=python_data)
         if serializer.is_valid():
             serializer.save()
-            res = {'mes':'data added successfully'}
+            res = {'mes': 'data added successfully'}
             json_data = JSONRenderer().render(res)
-            return HttpResponse(json_data,content_type="application/json")
+            return HttpResponse(json_data, content_type="application/json")
 
         json_data = JSONRenderer().render(serializer.errors)
-        return HttpResponse(json_data,content_type="application/json")
+        return HttpResponse(json_data, content_type="application/json")
 
-    if request.method == 'PUT':
+    def put(self, request, *args, **kwargs):
         json_data = request.body
         stream = io.BytesIO(json_data)
         python_data = JSONParser().parse(stream)
         id = python_data.get('id')
         stu = Student.objects.get(id=id)
         # for partial means only some data you want to update
-        serializer = StudentSerializers(stu, data = python_data, partial = True)
+        serializer = StudentSerializers(stu, data=python_data, partial=True)
         # for full means all data you want to update if you not fill all field then you can got error
-        serializer = StudentSerializers(stu, data = python_data)
+        serializer = StudentSerializers(stu, data=python_data)
         if serializer.is_valid():
             serializer.save()
-            res = {'mes':'data updated successfully'}
+            res = {'mes': 'data updated successfully'}
             json_data = JSONRenderer().render(res)
-            return HttpResponse(json_data,content_type="application/json")
+            return HttpResponse(json_data, content_type="application/json")
 
         json_data = JSONRenderer().render(serializer.errors)
-        return HttpResponse(json_data,content_type="application/json")
+        return HttpResponse(json_data, content_type="application/json")
 
-
-
-    if request.method == "DELETE":
+    def delete(self, request, *args, **kwargs):
         json_data = request.body
         stream = io.BytesIO(json_data)
         python_data = JSONParser().parse(stream)
         id = python_data.get('id')
         stu = Student.objects.get(id=id)
         stu.delete()
-        res = {'msg':'data deleted successfully'}
+        res = {'msg': 'data deleted successfully'}
         return JsonResponse(res, safe=False)
-
-
-
-
-
